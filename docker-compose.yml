@@ -1,0 +1,45 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+  redis:
+    image: redis:latest
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./server
+    volumes:
+      - "/workspace/node_modules"
+      - "./server:/workspace"
+    environment:
+      - REDIS_HOST=redis # Since "docker-compose" does the network magic, we can "redis" (which is the name of the service specified above) as a host, without needing to care about IP.
+      - REDIS_PORT=6379 # default values found on "docker hub" docs.
+      - PGUSER=postgres # default values found on "docker hub" docs.
+      - PGHOST=postgres # Since "docker-compose" does the network magic, we can "postgres" (which is the name of the service specified above) as a host, without needing to care about IP.
+      - PGDATABASE=postgres # default values found on "docker hub" docs.
+      - PGPASSWORD=postgres_password # default values found on "docker hub" docs.
+      - PGPORT=5432 # default values found on "docker hub" docs.
+  client:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - "/workspace/node_modules"
+      - "./client:/workspace"
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - "/workspace/node_modules"
+      - "./worker:/workspace"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
